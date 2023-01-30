@@ -1,4 +1,5 @@
 using System;
+using ExitGames.Client.Photon;
 using Photon.Pun;
 using Photon.Realtime;
 using UnityEngine;
@@ -12,10 +13,12 @@ public class GameManager : MonoBehaviourPunCallbacks
 
     private void Start()
     {
-        Vector3 position = new Vector3(Random.Range(-5f, 5f), Random.Range(-5f, 5f));
+        Vector3 position = new Vector3(Random.Range(1, 15), Random.Range(1, 5));
         PhotonNetwork.Instantiate("Player", position, Quaternion.identity);
         
         _leaveRoom.onClick.AddListener(Leave);
+
+        PhotonPeer.RegisterType(typeof(Vector2Int), 242, SerializeVector2Int, DeserializeVector2Int); 
     }
 
     private void OnDestroy()
@@ -41,5 +44,26 @@ public class GameManager : MonoBehaviourPunCallbacks
     public override void OnPlayerLeftRoom(Player otherPlayer)
     {
         Debug.LogFormat("Player {0} left room", otherPlayer.NickName);
+    }
+
+    public static object DeserializeVector2Int(byte[] data)
+    {
+        Vector2Int result = new Vector2Int();
+
+        result.x = BitConverter.ToInt32(data, 0);
+        result.y = BitConverter.ToInt32(data, 4);
+
+        return result;
+    }
+
+    public static byte[] SerializeVector2Int(object obj)
+    {
+        Vector2Int vector = (Vector2Int)obj;
+        byte[] result = new byte[8];
+
+        BitConverter.GetBytes(vector.x).CopyTo(result, 0);
+        BitConverter.GetBytes(vector.y).CopyTo(result, 4);
+
+        return result; 
     }
 }
