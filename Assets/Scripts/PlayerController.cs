@@ -8,6 +8,7 @@ public class PlayerController : MonoBehaviour, IPunObservable
     [SerializeField] private PhotonView _photonView;
     [SerializeField] private SpriteRenderer _spriteRenderer;
     [SerializeField] private Sprite _otherPlayerSprite;
+    [SerializeField] private Transform _ladder;
 
     public Vector2Int Direction;
     public Vector2Int GamePosition;
@@ -46,5 +47,16 @@ public class PlayerController : MonoBehaviour, IPunObservable
             _spriteRenderer.flipX = false;
 
         transform.position = Vector3.Lerp(transform.position, (Vector2)GamePosition, Time.deltaTime * 3);
+    }
+
+    public void SetLadderLength(int length) {
+        for (int i = 0; i < _ladder.childCount; i++) {
+            _ladder.GetChild(i).gameObject.SetActive(i < length);
+        }
+
+        while (_ladder.childCount < length) {
+            Transform lastTile = _ladder.GetChild(_ladder.childCount - 1);
+            Instantiate(lastTile, lastTile.position + Vector3.down, Quaternion.identity, _ladder);
+        }
     }
 }

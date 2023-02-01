@@ -78,6 +78,14 @@ public class MapController : MonoBehaviour, IOnEventCallback
             if (player.GamePosition.y >= _cells.GetLength(1)) player.GamePosition.y = _cells.GetLength(1) - 1;
             
             _cells[player.GamePosition.x, player.GamePosition.y].SetActive(false);
+
+            int ladderLength = 0;
+            Vector2Int position = player.GamePosition;
+            while (position.y > 0 && !_cells[position.x, position.y - 1].activeSelf) {
+                ladderLength++;
+                position.y--; 
+            }
+            player.SetLadderLength(ladderLength);
         }
 
         _lastTickTime = PhotonNetwork.Time;
