@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using ExitGames.Client.Photon;
@@ -8,12 +7,16 @@ using UnityEngine;
 
 public class MapController : MonoBehaviour, IOnEventCallback
 {
+    [SerializeField] private PlayersTop _top;
+    [Space]
     [SerializeField] private GameObject _cellPrefab;
 
     private GameObject[,] _cells;
     private List<PlayerController> _players = new List<PlayerController>();
 
     private double _lastTickTime;
+
+    public List<PlayerController> Players => _players;
 
     public void AddPlayer(PlayerController player)
     {
@@ -41,6 +44,7 @@ public class MapController : MonoBehaviour, IOnEventCallback
             PhotonNetwork.CurrentRoom.PlayerCount == 2) {
 
             Vector2Int[] directions = _players
+                .Where(p => !p.IsDead)
                 .OrderBy(p => p.PhotonView.Owner.ActorNumber)
                 .Select(p => p.Direction)
                 .ToArray();
@@ -67,7 +71,10 @@ public class MapController : MonoBehaviour, IOnEventCallback
     private void PerformTick(Vector2Int[] directions) {
         if(_players.Count != directions.Length) return;
 
-        var sortedPlayer = _players.OrderBy(p => p.PhotonView.Owner.ActorNumber).ToArray();
+        var sortedPlayer = _players
+            .Where(p => !p.IsDead)
+            .OrderBy(p => p.PhotonView.Owner.ActorNumber)
+            .ToArray();
         
         int i = 0;
         foreach (var player in sortedPlayer) {
@@ -77,8 +84,17 @@ public class MapController : MonoBehaviour, IOnEventCallback
         
         foreach (var player in sortedPlayer) {
             MovePlayer(player);
+        }       
+        
+        foreach (var player in _players.Where(p => p.IsDead)) {
+            Vector2Int position = player.GamePosition;
+            while (position.y > 0 && !_cells[position.x, position.y - 1].activeSelf) {
+                position.y--; 
+            }
+            player.GamePosition = position;
         }
 
+        _top.SetText(_players);
         _lastTickTime = PhotonNetwork.Time;
     }
 
@@ -90,7 +106,12 @@ public class MapController : MonoBehaviour, IOnEventCallback
         if (targetPosition.x >= _cells.GetLength(0)) return;
         if (targetPosition.y >= _cells.GetLength(1)) return;
 
-        _cells[player.GamePosition.x, player.GamePosition.y].SetActive(false);
+        var cell = _cells[player.GamePosition.x, player.GamePosition.y];
+        if (cell.activeSelf) {
+            cell.SetActive(false);
+            player.Score++; 
+        }
+            
 
         Vector2Int position = targetPosition;
         PlayerController minePlayer = _players.First(p => p.PhotonView.IsMine);

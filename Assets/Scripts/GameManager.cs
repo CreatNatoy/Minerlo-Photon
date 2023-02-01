@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using ExitGames.Client.Photon;
 using Photon.Pun;
 using Photon.Realtime;
@@ -10,6 +11,7 @@ using Random = UnityEngine.Random;
 public class GameManager : MonoBehaviourPunCallbacks
 {
     [SerializeField] private Button _leaveRoom;
+    [SerializeField] private MapController _mapController;
 
     private void Start()
     {
@@ -41,8 +43,11 @@ public class GameManager : MonoBehaviourPunCallbacks
         Debug.LogFormat("Player {0} entered room", newPlayer.NickName);
     }
 
-    public override void OnPlayerLeftRoom(Player otherPlayer)
-    {
+    public override void OnPlayerLeftRoom(Player otherPlayer) {
+     //   PlayerController player = _mapController.Players.First(p => p.PhotonView.Owner == null);
+        PlayerController player = _mapController.Players.First(p => p.PhotonView.CreatorActorNr == otherPlayer.ActorNumber);
+        if(player != null) player.Kill();
+        
         Debug.LogFormat("Player {0} left room", otherPlayer.NickName);
     }
 

@@ -1,4 +1,5 @@
 ﻿using Photon.Pun;
+using TMPro;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour, IPunObservable
@@ -8,11 +9,16 @@ public class PlayerController : MonoBehaviour, IPunObservable
     [SerializeField] private PhotonView _photonView;
     [SerializeField] private SpriteRenderer _spriteRenderer;
     [SerializeField] private Sprite _otherPlayerSprite;
+    [SerializeField] private Sprite _deadPlayerSprite;
     [SerializeField] private Transform _ladder;
+    [SerializeField] private TextMeshProUGUI _nicknameText;
+
+    public bool IsDead { private set; get; }
 
     public Vector2Int Direction;
     public Vector2Int GamePosition;
     public PhotonView PhotonView => _photonView;
+    public int Score = 0;
 
     public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
     {
@@ -28,12 +34,16 @@ public class PlayerController : MonoBehaviour, IPunObservable
         
         FindObjectOfType<MapController>().AddPlayer(this);
 
-        if (!_photonView.IsMine) _spriteRenderer.sprite = _otherPlayerSprite;
+        _nicknameText.SetText(_photonView.Owner.NickName);
+        if (!_photonView.IsMine) {
+            _spriteRenderer.sprite = _otherPlayerSprite;
+            _nicknameText.color = Color.red;
+        }
     }
 
     private void Update()
     {
-        if (_photonView.IsMine)
+        if (_photonView.IsMine && !IsDead)
         {
             if (Input.GetKey(KeyCode.LeftArrow)) Direction = Vector2Int.left;
             if (Input.GetKey(KeyCode.RightArrow)) Direction = Vector2Int.right;
@@ -58,5 +68,11 @@ public class PlayerController : MonoBehaviour, IPunObservable
             Transform lastTile = _ladder.GetChild(_ladder.childCount - 1);
             Instantiate(lastTile, lastTile.position + Vector3.down, Quaternion.identity, _ladder);
         }
+    }
+
+    public void Kill() {
+        IsDead = true;
+        _spriteRenderer.sprite = _deadPlayerSprite;
+        SetLadderLength(0);
     }
 }

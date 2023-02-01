@@ -9,14 +9,18 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     [Header("Text")]
     [SerializeField] private TextMeshProUGUI _logText;
 
+    [Space] 
+    [SerializeField] private TMP_InputField _inputNickname;
+    
     [Header("Button")] 
     [SerializeField] private Button _createRoom; 
     [SerializeField] private Button _joinRandomRoom; 
 
-    private void Start()
-    {
-        PhotonNetwork.NickName = "Player" + Random.Range(1000, 10000);
-        Log("Player's name is set to " + PhotonNetwork.NickName);
+    private void Start() {
+        string nickName = PlayerPrefs.GetString("NickName", "Player" + Random.Range(1000, 9999));
+        PhotonNetwork.NickName = nickName;
+        _inputNickname.text = nickName;
+        Log("Player's name is set to " + nickName);
 
         PhotonNetwork.AutomaticallySyncScene = true;
         PhotonNetwork.GameVersion = "1";
@@ -31,13 +35,19 @@ public class LobbyManager : MonoBehaviourPunCallbacks
       Log("Connected to Master");  
     }
 
-    private void CreateRoom()
-    {
-        PhotonNetwork.CreateRoom(null, new Photon.Realtime.RoomOptions { MaxPlayers = 2 });
+    private void CreateRoom() {
+        SetName();
+        PhotonNetwork.CreateRoom(null, new Photon.Realtime.RoomOptions { MaxPlayers = 2, CleanupCacheOnLeave = false});
+    }
+
+    private void SetName() {
+        PhotonNetwork.NickName = _inputNickname.text;
+        PlayerPrefs.SetString("NickName", _inputNickname.text);
     }
 
     private void JoinRoom()
     {
+        SetName();
         PhotonNetwork.JoinRandomRoom();
     }
 
