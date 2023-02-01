@@ -67,28 +67,60 @@ public class MapController : MonoBehaviour, IOnEventCallback
     private void PerformTick(Vector2Int[] directions) {
         if(_players.Count != directions.Length) return;
 
+        var sortedPlayer = _players.OrderBy(p => p.PhotonView.Owner.ActorNumber).ToArray();
+        
         int i = 0;
-        foreach (var player in _players.OrderBy(p=> p.PhotonView.Owner.ActorNumber)) {
+        foreach (var player in sortedPlayer) {
             player.Direction = directions[i++];
-            player.GamePosition += player.Direction;
-
-            if (player.GamePosition.x < 0) player.GamePosition.x = 0; 
-            if (player.GamePosition.y < 0) player.GamePosition.y = 0;
-            if (player.GamePosition.x >= _cells.GetLength(0)) player.GamePosition.x = _cells.GetLength(0) - 1; 
-            if (player.GamePosition.y >= _cells.GetLength(1)) player.GamePosition.y = _cells.GetLength(1) - 1;
-            
-            _cells[player.GamePosition.x, player.GamePosition.y].SetActive(false);
-
-            int ladderLength = 0;
-            Vector2Int position = player.GamePosition;
-            while (position.y > 0 && !_cells[position.x, position.y - 1].activeSelf) {
-                ladderLength++;
-                position.y--; 
-            }
-            player.SetLadderLength(ladderLength);
+            MinePlayerBlock(player);
+        }
+        
+        foreach (var player in sortedPlayer) {
+            MovePlayer(player);
         }
 
         _lastTickTime = PhotonNetwork.Time;
+    }
+
+    private void MinePlayerBlock(PlayerController player) {
+       var targetPosition = player.GamePosition + player.Direction;
+
+        if (targetPosition.x < 0) return;
+        if (targetPosition.y < 0) return;
+        if (targetPosition.x >= _cells.GetLength(0)) return;
+        if (targetPosition.y >= _cells.GetLength(1)) return;
+
+        _cells[player.GamePosition.x, player.GamePosition.y].SetActive(false);
+
+        Vector2Int position = targetPosition;
+        PlayerController minePlayer = _players.First(p => p.PhotonView.IsMine);
+        if (minePlayer != player) {
+            while (position.y < _cells.GetLength(1) && !_cells[position.x, position.y].activeSelf) {
+                if (position == minePlayer.GamePosition) {
+                    PhotonNetwork.LeaveRoom();
+                    break;
+                }
+                position.y++; 
+            }
+        }
+    }
+
+    private void MovePlayer(PlayerController player) {
+        player.GamePosition += player.Direction;
+
+        if (player.GamePosition.x < 0) player.GamePosition.x = 0;
+        if (player.GamePosition.y < 0) player.GamePosition.y = 0;
+        if (player.GamePosition.x >= _cells.GetLength(0)) player.GamePosition.x = _cells.GetLength(0) - 1;
+        if (player.GamePosition.y >= _cells.GetLength(1)) player.GamePosition.y = _cells.GetLength(1) - 1;
+        
+        int ladderLength = 0;
+        Vector2Int position = player.GamePosition;
+        while (position.y > 0 && !_cells[position.x, position.y - 1].activeSelf) {
+            ladderLength++;
+            position.y--;
+        }
+
+        player.SetLadderLength(ladderLength);
     }
 
     public void OnEnable() {
