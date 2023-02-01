@@ -7,15 +7,27 @@ public class PlayerController : MonoBehaviour, IPunObservable
     [Space] 
     [SerializeField] private PhotonView _photonView;
     [SerializeField] private SpriteRenderer _spriteRenderer;
+    [SerializeField] private Sprite _otherPlayerSprite;
 
-    public Vector2Int Direction { get; private set; }
-    public Vector2Int GamePosition { get; private set; }
+    public Vector2Int Direction;
+    public Vector2Int GamePosition;
+    public PhotonView PhotonView => _photonView;
+
+    public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
+    {
+        if(stream.IsWriting)
+            stream.SendNext(Direction);
+        else
+            Direction = (Vector2Int)stream.ReceiveNext();
+    }
 
     private void Start()
     {
         GamePosition = new Vector2Int((int)transform.position.x, (int)transform.position.y);
         
         FindObjectOfType<MapController>().AddPlayer(this);
+
+        if (!_photonView.IsMine) _spriteRenderer.sprite = _otherPlayerSprite;
     }
 
     private void Update()
@@ -34,13 +46,5 @@ public class PlayerController : MonoBehaviour, IPunObservable
             _spriteRenderer.flipX = false;
 
         transform.position = Vector3.Lerp(transform.position, (Vector2)GamePosition, Time.deltaTime * 3);
-    }
-
-    public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
-    {
-        if(stream.IsWriting)
-            stream.SendNext(Direction);
-        else
-            Direction = (Vector2Int)stream.ReceiveNext();
     }
 }

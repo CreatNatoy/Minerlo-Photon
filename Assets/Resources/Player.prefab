@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 5587739356010822070}
   - component: {fileID: 6982788865612068153}
-  - component: {fileID: 5371124121602690500}
   - component: {fileID: 4646340157446761097}
   m_Layer: 0
   m_Name: Player
@@ -54,27 +53,10 @@ MonoBehaviour:
   OwnershipTransfer: 0
   observableSearch: 2
   ObservedComponents:
-  - {fileID: 5371124121602690500}
   - {fileID: 4646340157446761097}
   sceneViewId: 0
   InstantiationId: 0
   isRuntimeInstantiated: 0
---- !u!114 &5371124121602690500
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6417074810474317356}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 627855c7f81362d41938ffe0b1475957, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_SynchronizePosition: 1
-  m_SynchronizeRotation: 0
-  m_SynchronizeScale: 0
-  m_UseLocal: 1
 --- !u!114 &4646340157446761097
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -90,6 +72,9 @@ MonoBehaviour:
   _speed: 5
   _photonView: {fileID: 6982788865612068153}
   _spriteRenderer: {fileID: 1061361381642711723}
+  _otherPlayerSprite: {fileID: 21300000, guid: 35438cd3bd0247747bb90703f0ae0263, type: 3}
+  Direction: {x: 0, y: 0}
+  GamePosition: {x: 0, y: 0}
 --- !u!1 &9035846913905664962
 GameObject:
   m_ObjectHideFlags: 0
