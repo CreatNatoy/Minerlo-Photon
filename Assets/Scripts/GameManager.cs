@@ -21,6 +21,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         _leaveRoom.onClick.AddListener(Leave);
 
         PhotonPeer.RegisterType(typeof(Vector2Int), 242, SerializeVector2Int, DeserializeVector2Int); 
+        PhotonPeer.RegisterType(typeof(SyncData), 243, SyncData.Serialize, SyncData.Deserialize); 
     }
 
     private void OnDestroy()
@@ -40,6 +41,10 @@ public class GameManager : MonoBehaviourPunCallbacks
 
     public override void OnPlayerEnteredRoom(Player newPlayer)
     {
+        if (PhotonNetwork.IsMasterClient) {
+            _mapController.SendSyncData(newPlayer);
+        }
+        
         Debug.LogFormat("Player {0} entered room", newPlayer.NickName);
     }
 

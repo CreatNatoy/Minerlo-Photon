@@ -1,6 +1,8 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using ExitGames.Client.Photon;
+using ExitGames.Client.Photon.StructWrapping;
 using Photon.Pun;
 using Photon.Realtime;
 using UnityEngine;
@@ -41,7 +43,7 @@ public class MapController : MonoBehaviour, IOnEventCallback
     private void Update() {
         if (PhotonNetwork.Time > _lastTickTime + 1 &&
             PhotonNetwork.IsMasterClient &&
-            PhotonNetwork.CurrentRoom.PlayerCount == 2) {
+            PhotonNetwork.CurrentRoom.PlayerCount >= 2) {
 
             Vector2Int[] directions = _players
                 .Where(p => !p.IsDead)
@@ -57,6 +59,34 @@ public class MapController : MonoBehaviour, IOnEventCallback
         }
     }
 
+    public void SendSyncData(Player player) {
+        SyncData data = new SyncData {
+            Positions = new Vector2Int[_players.Count],
+            Scores = new int[_players.Count],
+            MapData = new BitArray(20 * 10),
+        };
+
+        PlayerController[] sortedPlayers = _players
+            .Where(p => !p.IsDead)
+            .OrderBy(p => p.PhotonView.Owner.ActorNumber)
+            .ToArray();
+
+        for (int i = 0; i < sortedPlayers.Length; i++) {
+            data.Positions[i] = sortedPlayers[i].GamePosition;
+            data.Scores[i] = sortedPlayers[i].Score;
+        }
+
+        for (int x = 0; x < _cells.GetLength(0); x++) {
+            for (int y = 0; y < _cells.GetLength(1); y++) {
+                data.MapData.Set(x + y * _cells.GetLength(0), _cells[x,y].activeSelf);                
+            }
+        }
+        
+        RaiseEventOptions options = new RaiseEventOptions { TargetActors = new[] {player.ActorNumber} };
+        SendOptions sendOptions = new SendOptions { Reliability = true };
+        PhotonNetwork.RaiseEvent(43, data, options, sendOptions);
+    }
+
     public void OnEvent(EventData photonEvent) {
         switch (photonEvent.Code) {
             case 42:
@@ -65,6 +95,39 @@ public class MapController : MonoBehaviour, IOnEventCallback
                 PerformTick(directions);
                 
                 break;
+            case 43:
+                var data = (SyncData)photonEvent.CustomData;
+
+                StartCoroutine(OnSyncDataReceived(data));
+                
+                break;
+        }
+    }
+
+    private IEnumerator OnSyncDataReceived(SyncData data) {
+        PlayerController[] sortedPlayers;
+        do {
+            yield return null;
+            sortedPlayers = _players
+                .Where(p => !p.IsDead)
+                .Where(p => !p.PhotonView.IsMine)
+                .OrderBy(p => p.PhotonView.Owner.ActorNumber)
+                .ToArray();
+        } while (sortedPlayers.Length != data.Positions.Length);
+
+        for (int i = 0; i < sortedPlayers.Length; i++) {
+            sortedPlayers[i].GamePosition = data.Positions[i];
+            sortedPlayers[i].Score = data.Scores[i];
+
+            sortedPlayers[i].transform.position = (Vector2)sortedPlayers[i].GamePosition;
+        }
+        
+        for (int x = 0; x < _cells.GetLength(0); x++) {
+            for (int y = 0; y < _cells.GetLength(1); y++) {
+                bool cellActive = data.MapData.Get(x + y * _cells.GetLength(0));
+                if(!cellActive)
+                    _cells[x, y].SetActive(false);             
+            }
         }
     }
 
@@ -99,6 +162,8 @@ public class MapController : MonoBehaviour, IOnEventCallback
     }
 
     private void MinePlayerBlock(PlayerController player) {
+        if(player.Direction == Vector2Int.zero) return;
+        
        var targetPosition = player.GamePosition + player.Direction;
 
         if (targetPosition.x < 0) return;

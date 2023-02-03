@@ -37,7 +37,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
 
     private void CreateRoom() {
         SetName();
-        PhotonNetwork.CreateRoom(null, new Photon.Realtime.RoomOptions { MaxPlayers = 2, CleanupCacheOnLeave = false});
+        PhotonNetwork.CreateRoom(null, new Photon.Realtime.RoomOptions { MaxPlayers = 10, CleanupCacheOnLeave = false});
     }
 
     private void SetName() {
