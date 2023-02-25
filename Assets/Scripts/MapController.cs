@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using ExitGames.Client.Photon;
-using ExitGames.Client.Photon.StructWrapping;
 using Photon.Pun;
 using Photon.Realtime;
 using UnityEngine;
@@ -182,7 +181,7 @@ public class MapController : MonoBehaviour, IOnEventCallback
         PlayerController minePlayer = _players.First(p => p.PhotonView.IsMine);
         if (minePlayer != player) {
             while (position.y < _cells.GetLength(1) && !_cells[position.x, position.y].activeSelf) {
-                if (position == minePlayer.GamePosition) {
+                if (position.x == minePlayer.GamePosition.x) {
                     PhotonNetwork.LeaveRoom();
                     break;
                 }
